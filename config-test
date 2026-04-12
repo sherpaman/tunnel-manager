@@ -1,0 +1,61 @@
+Host henry-desktop
+    HostName henry-desktop
+    User coletta
+
+Host claviate-bastion
+    HostName bastion.claviate.com
+    User ec2-user
+    IdentityFile ~/.ssh/bastion.pem
+    IdentitiesOnly yes
+
+Host github-sherpaman
+    Hostname github.com
+    IdentityFile ~/.ssh/github-Z790-D
+    IdentitiesOnly yes 
+    AddKeysToAgent yes
+
+Host github.com
+    Hostname github.com
+    IdentityFile ~/.ssh/github
+    IdentitiesOnly yes
+    AddKeysToAgent yes
+
+Host andrea-albert
+    Hostname albert
+    User andrea
+
+Host trainer-albert
+    Hostname albert
+    User trainer
+    IdentityFile ~/.ssh/trainer_albert.pem
+
+Host image-markup-tool
+    HostName ec2-34-245-78-149.eu-west-1.compute.amazonaws.com
+    User ec2-user
+    IdentityFile ~/.ssh/claviate-markup-tool.pem
+
+Host event-markup-tool
+    HostName 172.31.10.215
+    User ec2-user
+    IdentityFile ~/.ssh/test-ec2-keypair.pem
+    IdentitiesOnly yes
+    Port 22
+    ProxyJump claviate-bastion
+
+##############
+# TUNNEL DEF #
+##############
+
+Host tunnel-mlflow-dev
+    LocalForward 5001 core-api-develop-7b35dd07df553f48.elb.eu-west-1.amazonaws.com:5000
+    HostName bastion.claviate.com
+    User ec2-user
+    IdentityFile ~/.ssh/bastion.pem
+    IdentitiesOnly yes
+
+Host tunnel-customer-api-dev
+    LocalForward 8093 customer-api-dev-nlb-f8aed86ce67d850d.elb.eu-west-1.amazonaws.com:443
+    HostName bastion.claviate.com
+    User ec2-user
+    IdentityFile ~/.ssh/bastion.pem
+    IdentitiesOnly yes
