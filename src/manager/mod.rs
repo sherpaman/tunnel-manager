@@ -20,9 +20,10 @@ impl TunnelManager {
 
         let socket = Self::socket_path(name);
 
-        // ssh -N -f -S <socket> <name>
+        // ssh -N -f -M -S <socket> <name>
         // -N: Do not execute remote command
         // -f: Request ssh to go to background
+        // -M: Master mode for connection sharing
         // -S: Control socket for connection sharing
         let output = Command::new("ssh")
             .arg("-N")
@@ -42,9 +43,9 @@ impl TunnelManager {
                 String::from_utf8_lossy(&output.stderr)
             ));
         }
-        println!("{:?}", output);
-        println!("Opened tunnel {} with control socket at {:?}", name, socket);
-        println!("Use 'tunnel-manager list' to see active tunnels.");
+        //println!("{:?}", output);
+        //println!("Opened tunnel {} with control socket at {:?}", name, socket);
+        //println!("Use 'tunnel-manager list' to see active tunnels.");
 
         Ok(())
     }
@@ -65,7 +66,7 @@ impl TunnelManager {
         if output.status.success() {
             // Cleanup socket file if it still exists
             let _ = fs::remove_file(socket);
-            println!("Closed tunnel {}", name);
+            //println!("Closed tunnel {}", name);
             Ok(())
         } else {
             Err(format!(

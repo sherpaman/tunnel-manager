@@ -111,3 +111,55 @@ fn main() {
         },
     }
 }
+
+
+// #[test]
+// fn test_socket_path() {
+//     let path = TunnelManager::socket_path("test");
+//     assert!(path.ends_with("tunnel-manager-test.sock"));
+// }
+
+#[test]
+fn test_is_active_false_for_nonexistent() {
+    let manager = TunnelManager::new();
+    assert!(!manager.is_active("definitely_nonexistent_tunnel"));
+}
+
+#[test]
+fn test_open_and_close_tunnel() {
+    // This test assumes you have a Host test-tunnel in your ~/.ssh/config
+    let manager = TunnelManager::new();
+    let tunnels = parse_ssh_config().expect("Failed to parse config");
+    let name = tunnels.first().expect("No tunnels in config").name.clone();
+    // Try to close first in case it's open
+    let _ = manager.close_tunnel(&name);
+    assert!(!manager.is_active(&name));
+    // Open
+    let open_result = manager.open_tunnel(&name);
+    assert!(open_result.is_ok(), "Failed to open: {:?}", open_result);
+    assert!(manager.is_active(&name));
+    // Close
+    let close_result = manager.close_tunnel(&name);
+    assert!(close_result.is_ok(), "Failed to close: {:?}", close_result);
+    assert!(!manager.is_active(&name));
+}
+
+#[test]
+fn test_list_active() {
+    let manager = TunnelManager::new();
+    let active = manager.list_active();
+    // Should not panic, and should be a Vec
+    assert!(active.is_empty() || active.iter().all(|n| !n.is_empty()));
+}
+
+#[test]
+fn test_parse_ssh_config() {
+    let tunnels = parse_ssh_config();
+    assert!(tunnels.is_ok());
+    let tunnels = tunnels.unwrap();
+    for t in tunnels {
+        assert!(!t.name.is_empty());
+        assert!(!t.forward.is_empty());
+    }
+}
+
