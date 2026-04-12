@@ -95,8 +95,19 @@ impl TunnelManager {
             .output();
 
         match output {
-            Ok(out) => out.status.success(),
-            Err(_) => false,
+            Ok(out) => {
+                if out.status.success() {
+                    true
+                } else {
+                    // If the check fails, remove the stale socket file
+                    let _ = fs::remove_file(&socket);
+                    false
+                }
+            },
+            Err(_) => {
+                let _ = fs::remove_file(&socket);
+                false
+            },
         }
     }
 
