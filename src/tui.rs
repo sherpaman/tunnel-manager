@@ -25,6 +25,7 @@ pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
     let mut quit = false;
     let mut status_msg = String::new();
     let manager = TunnelManager::new();
+    let mut scroll_offset = 0;
     while !quit {
         terminal.draw(|f| {
             let size = f.size();
@@ -40,7 +41,7 @@ pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
                 .direction(Direction::Horizontal)
                 .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
                 .split(main_chunks[1]);
-            // Left: tunnel list
+            // Left: tunnel list (scrollable)
             let tunnel_items: Vec<ListItem> = tunnels
                 .iter()
                 .enumerate()
@@ -58,7 +59,17 @@ pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
                     ListItem::new(text).style(style)
                 })
                 .collect();
-            let tunnels_list = List::new(tunnel_items)
+            // Calculate visible window for scrolling
+            let list_height = chunks[0].height.saturating_sub(2) as usize; // minus borders
+            let total = tunnel_items.len();
+            if selected < scroll_offset {
+                scroll_offset = selected;
+            } else if selected >= scroll_offset + list_height {
+                scroll_offset = selected + 1 - list_height;
+            }
+            let end = (scroll_offset + list_height).min(total);
+            let visible_items = tunnel_items[scroll_offset..end].to_vec();
+            let tunnels_list = List::new(visible_items)
                 .block(Block::default().borders(Borders::ALL).title("Tunnels"));
             f.render_widget(tunnels_list, chunks[0]);
             // Right: vertical split
