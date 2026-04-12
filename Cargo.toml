@@ -5,4 +5,12 @@ edition = "2024"
 
 [dependencies]
 clap = { version = "4.6.0", features = ["derive"] }
+color-eyre = "0.6.5"
+futures = "0.3.32"
+ratatui = "0.26"
+crossterm = "0.27"
 regex = "1.12.3"
+serde = "1.0.228"
+serde_derive = "1.0.228"
+tokio = "1.51.1"
+tokio-util = "0.7.18"

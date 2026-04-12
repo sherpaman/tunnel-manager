@@ -43,10 +43,7 @@ impl TunnelManager {
             ));
         }
         println!("{:?}", output);
-        println!(
-            "Opened tunnel {} with control socket at {:?}",
-            name, socket
-        );
+        println!("Opened tunnel {} with control socket at {:?}", name, socket);
         println!("Use 'tunnel-manager list' to see active tunnels.");
 
         Ok(())
@@ -103,11 +100,11 @@ impl TunnelManager {
                     let _ = fs::remove_file(&socket);
                     false
                 }
-            },
+            }
             Err(_) => {
                 let _ = fs::remove_file(&socket);
                 false
-            },
+            }
         }
     }
 
