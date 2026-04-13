@@ -14,11 +14,13 @@ pub struct TunnelInfo {
 }
 
 pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
-    use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+    use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+    use crossterm::execute;
     use ratatui::Terminal;
     use ratatui::backend::CrosstermBackend;
     enable_raw_mode()?;
     let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(&mut stdout);
     let mut terminal = Terminal::new(backend)?;
     let mut selected = 0;
@@ -49,7 +51,7 @@ pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
                     let style = if t.active {
                         Style::default().fg(Color::Green)
                     } else {
-                        Style::default().fg(Color::DarkGray)
+                        Style::default().fg(Color::Gray)
                     };
                     let marker = if t.active { "●" } else { "○" };
                     let mut text = format!("{} {}", marker, t.name);
@@ -148,6 +150,7 @@ pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
         }
     }
     disable_raw_mode()?;
-    terminal.clear()?;
+    drop(terminal); // Explicitly drop terminal before reusing stdout
+    execute!(stdout, LeaveAlternateScreen)?;
     Ok(())
 }
