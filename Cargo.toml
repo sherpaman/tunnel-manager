@@ -2,6 +2,10 @@
 name = "tunnel-manager"
 version = "0.1.0"
 edition = "2024"
+authors = ["Andrea Coletta, PhD <andrea.coletta.phd@gmail.com>"] 
+license = "MIT"
+repository = "https://github.com/sherpaman/tunnel-manager"
+readme = "README.md"
 
 [dependencies]
 clap = { version = "4.6.0", features = ["derive"] }
@@ -14,3 +18,9 @@ serde = "1.0.228"
 serde_derive = "1.0.228"
 tokio = "1.51.1"
 tokio-util = "0.7.18"
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
