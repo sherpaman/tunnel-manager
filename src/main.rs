@@ -28,6 +28,12 @@ enum Commands {
     Tui,
 }
 
+impl Default for Commands {
+    fn default() -> Self {
+        Commands::Tui
+    }
+}
+
 fn main() {
     let cli = Cli::parse();
     let manager = TunnelManager::new();
