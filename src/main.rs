@@ -41,12 +41,15 @@ fn main() {
                 let active = Tunnel::list_active();
                 println!("Tunnels:");
                 for t in tunnels {
-                    let status = if active.contains(&t.name) {
-                        "[ACTIVE]"
-                    } else {
-                        "[ ]"
-                    };
-                    println!("{} {}: {}", status, t.name, t.forward);
+                    let status = if active.contains(&t.name) { "[ACTIVE]" } else { "[ ]" };
+                    println!(
+                        "{} {}: :{} -> {}:{}",
+                        status,
+                        t.name,
+                        t.local_port.map(|p| p.to_string()).as_deref().unwrap_or("?"),
+                        t.remote_forward.as_deref().unwrap_or("?"),
+                        t.remote_port.map(|p| p.to_string()).as_deref().unwrap_or("?"),
+                    );
                 }
             }
             Err(e) => eprintln!("Error reading config: {}", e),
@@ -67,11 +70,14 @@ fn main() {
         Commands::Close { name } => {
             let tunnel = Tunnel {
                 name,
-                forward: String::new(),
+                local_port: None,
+                remote_forward: None,
+                remote_port: None,
                 user: None,
                 hostname: None,
                 port: None,
                 identity_file: None,
+                identities_only: false,
             };
             match tunnel.close_tunnel() {
                 Ok(_) => println!("Done"),
@@ -85,21 +91,7 @@ fn main() {
                     .into_iter()
                     .map(|t| {
                         let is_active = active.contains(&t.name);
-                        let mut local_port = 0u16;
-                        let parts: Vec<&str> = t.forward.split_whitespace().collect();
-                        if parts.len() == 2 {
-                            let local = parts[0];
-                            if let Some((_, port)) = local.rsplit_once(':') {
-                                local_port = port.parse().unwrap_or(0);
-                            } else {
-                                local_port = local.parse().unwrap_or(0);
-                            }
-                        }
-                        TunnelInfo {
-                            tunnel: t,
-                            active: is_active,
-                            local_port,
-                        }
+                        TunnelInfo { tunnel: t, active: is_active }
                     })
                     .collect();
                 let _ = run_tui(tunnel_infos);
@@ -113,11 +105,14 @@ fn main() {
 fn test_is_active_false_for_nonexistent() {
     let tunnel = Tunnel {
         name: "definitely_nonexistent_tunnel".to_string(),
-        forward: String::new(),
+        local_port: None,
+        remote_forward: None,
+        remote_port: None,
         user: None,
         hostname: None,
         port: None,
         identity_file: None,
+        identities_only: false,
     };
     assert!(!tunnel.is_active());
 }
@@ -143,7 +138,6 @@ fn test_open_and_close_tunnel() {
 #[test]
 fn test_list_active() {
     let active = Tunnel::list_active();
-    // Should not panic, and should be a Vec
     assert!(active.is_empty() || active.iter().all(|n| !n.is_empty()));
 }
 
@@ -154,6 +148,6 @@ fn test_parse_ssh_config() {
     let tunnels = tunnels.unwrap();
     for t in tunnels {
         assert!(!t.name.is_empty());
-        assert!(!t.forward.is_empty());
+        assert!(t.local_port.is_some() || t.remote_forward.is_some());
     }
 }

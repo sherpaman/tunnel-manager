@@ -1,0 +1,6 @@
+Host <TUNNEL_NAME>
+    LocalForward <LOCAL_PORT> <REMOTE_FORWARD>:<REMOTE_PORT>
+    HostName <HOSTNAME_OR_IP>
+    User <USERNAME>
+    IdentityFile ~/.ssh/<IDENTITY_FILE>
+    IdentitiesOnly yes

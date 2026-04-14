@@ -8,8 +8,6 @@ use std::io;
 pub struct TunnelInfo {
     pub tunnel: Tunnel,
     pub active: bool,
-    pub local_port: u16,
-    // Add any other TUI-specific fields here
 }
 
 pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
@@ -82,18 +80,9 @@ pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
             // Top right: tunnel details
             let t = &tunnels[selected];
             let details = format!(
-                "Status: {}\nRemote: {}\nLocal: {}\nUser: {}\nHost: {}\nPort: {}\nIdentityFile: {}",
+                "Status     : {}\n{}",
                 if t.active { "ACTIVE" } else { "INACTIVE" },
-                t.tunnel.forward,
-                t.local_port,
-                t.tunnel.user.as_deref().unwrap_or("-"),
-                t.tunnel.hostname.as_deref().unwrap_or("-"),
-                t.tunnel
-                    .port
-                    .map(|p| p.to_string())
-                    .as_deref()
-                    .unwrap_or("-"),
-                t.tunnel.identity_file.as_deref().unwrap_or("-"),
+                t.tunnel.display_info(),
             );
             let details_widget = Paragraph::new(details)
                 .block(Block::default().borders(Borders::ALL).title("Details"));
