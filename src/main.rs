@@ -151,3 +151,82 @@ fn test_parse_ssh_config() {
         assert!(t.local_port.is_some() || t.remote_forward.is_some());
     }
 }
+
+#[test]
+fn test_is_active_stale_socket_removed() {
+    use std::path::PathBuf;
+    let name = "test-stale-socket-cleanup";
+    let socket = PathBuf::from(format!("/tmp/tunnel-manager-{}.sock", name));
+    std::fs::write(&socket, b"").unwrap();
+    assert!(socket.exists());
+    let tunnel = Tunnel {
+        name: name.to_string(),
+        local_port: None,
+        remote_forward: None,
+        remote_port: None,
+        user: None,
+        hostname: None,
+        port: None,
+        identity_file: None,
+        identities_only: false,
+    };
+    assert!(!tunnel.is_active());
+    assert!(!socket.exists(), "stale socket must be removed");
+}
+
+#[test]
+fn test_list_active_cleans_stale_sockets() {
+    use std::path::PathBuf;
+    let name = "test-stale-list-cleanup";
+    let socket = PathBuf::from(format!("/tmp/tunnel-manager-{}.sock", name));
+    std::fs::write(&socket, b"").unwrap();
+    assert!(socket.exists());
+    let active = Tunnel::list_active();
+    assert!(!active.contains(&name.to_string()));
+    assert!(!socket.exists(), "stale socket must be removed by list_active");
+}
+
+#[test]
+fn test_close_tunnel_no_socket_returns_error() {
+    let tunnel = Tunnel {
+        name: "definitely_nonexistent_tunnel".to_string(),
+        local_port: None,
+        remote_forward: None,
+        remote_port: None,
+        user: None,
+        hostname: None,
+        port: None,
+        identity_file: None,
+        identities_only: false,
+    };
+    assert!(tunnel.close_tunnel().is_err());
+}
+
+#[test]
+fn test_open_tunnel_bad_host_returns_error() {
+    let tunnel = Tunnel {
+        name: "definitely_nonexistent_tunnel_host_xyz".to_string(),
+        local_port: None,
+        remote_forward: None,
+        remote_port: None,
+        user: None,
+        hostname: None,
+        port: None,
+        identity_file: None,
+        identities_only: false,
+    };
+    assert!(tunnel.open_tunnel().is_err());
+}
+
+#[test]
+fn test_display_info_used_in_context() {
+    // Verify display_info integrates with parse_ssh_config output without panicking
+    if let Ok(tunnels) = Tunnel::parse_ssh_config() {
+        for t in &tunnels {
+            let info = t.display_info();
+            assert!(!info.is_empty());
+            assert!(info.contains("Local Port"));
+            assert!(info.contains("Ident. Only"));
+        }
+    }
+}
