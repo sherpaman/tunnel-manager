@@ -1,4 +1,4 @@
-use crate::manager::TunnelManager;
+use crate::config::Tunnel;
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::*;
@@ -6,16 +6,17 @@ use ratatui::widgets::{Block, Borders, List, ListItem, Paragraph};
 use std::io;
 
 pub struct TunnelInfo {
-    pub name: String,
+    pub tunnel: Tunnel,
     pub active: bool,
-    pub remote_host: String,
-    pub remote_port: u16,
     pub local_port: u16,
+    // Add any other TUI-specific fields here
 }
 
 pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
-    use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
     use crossterm::execute;
+    use crossterm::terminal::{
+        EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
+    };
     use ratatui::Terminal;
     use ratatui::backend::CrosstermBackend;
     enable_raw_mode()?;
@@ -26,7 +27,6 @@ pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
     let mut selected = 0;
     let mut quit = false;
     let mut status_msg = String::new();
-    let manager = TunnelManager::new();
     let mut scroll_offset = 0;
     while !quit {
         terminal.draw(|f| {
@@ -54,7 +54,7 @@ pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
                         Style::default().fg(Color::Gray)
                     };
                     let marker = if t.active { "●" } else { "○" };
-                    let mut text = format!("{} {}", marker, t.name);
+                    let mut text = format!("{} {}", marker, t.tunnel.name);
                     if i == selected {
                         text = format!("> {}", text);
                     }
@@ -82,11 +82,18 @@ pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
             // Top right: tunnel details
             let t = &tunnels[selected];
             let details = format!(
-                "Status: {}\nRemote: {}:{}\nLocal: {}",
+                "Status: {}\nRemote: {}\nLocal: {}\nUser: {}\nHost: {}\nPort: {}\nIdentityFile: {}",
                 if t.active { "ACTIVE" } else { "INACTIVE" },
-                t.remote_host,
-                t.remote_port,
-                t.local_port
+                t.tunnel.forward,
+                t.local_port,
+                t.tunnel.user.as_deref().unwrap_or("-"),
+                t.tunnel.hostname.as_deref().unwrap_or("-"),
+                t.tunnel
+                    .port
+                    .map(|p| p.to_string())
+                    .as_deref()
+                    .unwrap_or("-"),
+                t.tunnel.identity_file.as_deref().unwrap_or("-"),
             );
             let details_widget = Paragraph::new(details)
                 .block(Block::default().borders(Borders::ALL).title("Details"));
@@ -115,12 +122,12 @@ pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
                         }
                     }
                     KeyCode::Char('o') => {
-                        let name = tunnels[selected].name.clone();
+                        let name = tunnels[selected].tunnel.name.clone();
                         let was_active = tunnels[selected].active;
                         if was_active {
                             status_msg = format!("Tunnel '{}' already active", name);
                         } else {
-                            match manager.open_tunnel(&name) {
+                            match tunnels[selected].tunnel.open_tunnel() {
                                 Ok(_) => {
                                     tunnels[selected].active = true;
                                     status_msg = format!("Opened tunnel '{}'", name);
@@ -130,12 +137,12 @@ pub fn run_tui(mut tunnels: Vec<TunnelInfo>) -> io::Result<()> {
                         }
                     }
                     KeyCode::Char('c') => {
-                        let name = tunnels[selected].name.clone();
+                        let name = tunnels[selected].tunnel.name.clone();
                         let was_active = tunnels[selected].active;
                         if !was_active {
                             status_msg = format!("Tunnel '{}' not active", name);
                         } else {
-                            match manager.close_tunnel(&name) {
+                            match tunnels[selected].tunnel.close_tunnel() {
                                 Ok(_) => {
                                     tunnels[selected].active = false;
                                     status_msg = format!("Closed tunnel '{}'", name);
